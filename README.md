@@ -4,7 +4,7 @@ This project aims to create a secure login form with robust protection against a
 
 ## Prerequisites
 
-- PHP
+- `PHP`
 - `database server` personally, I've chosen to use phpAdmins to create my database.
 - `database structure` users(id,username,pwd,perm,creation)
 
