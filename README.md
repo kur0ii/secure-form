@@ -17,7 +17,7 @@ The project is organized into several files, each with a specific role:
 - **login.php :** file for the login form
 - **register.php :** file for the registration form
 - **styles.css :** style file for layout
-- **database.sql :**file describing the database structuration
+- **database.sql :** file describing the database structuration
 - **README.md :** this file
 
 ## How to Connect?
