@@ -1,5 +1,6 @@
 <?php
 // Identifiant de connexion de la base de donnée
+// A modifier mettre vos identifiants
 
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root2');
