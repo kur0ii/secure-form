@@ -83,7 +83,7 @@
                                     $stmt = $conn->prepare("UPDATE users SET attempts = ?, last_attempt = CURRENT_TIMESTAMP WHERE id = ?");
                                     $stmt->bind_param("ii", $attempts, $user['id']);
                                     $stmt->execute();
-                                    echo "<p style='color:red;'>Username or password is incorrect. You have " . (MAX_ATTEMPTS - $attempts) . " attempt(s) left.</p>";
+                                    echo "<p style='color:red;'>Username or password is incorrect. You have " . htmlspecialchars(MAX_ATTEMPTS - $attempts) . " attempt(s) left.</p>";
                                 }
                             }
                         } else {
