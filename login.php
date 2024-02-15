@@ -21,49 +21,81 @@
         <div class="register">
             <p>Don't have an account ?<a href="register.php">Sign Up</a></p>
         </div>
-            <?php
+        <?php
             require_once "config.php";
 
-            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["username"]) && isset($_POST["password"])) {  
+            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["username"]) && isset($_POST["password"])) {
                 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
-                // Check connection with db
                 if ($conn->connect_error) {
-                    die("Connexion échouée: " . $conn->connect_error);
-                }
-
-                // Preparing SQL request
-                $stmt = $conn->prepare("SELECT id, username, pwd FROM users WHERE username = ?");
-                $stmt->bind_param("s", $username);
-
-                if (!$stmt) {
-                    echo "<p style='color:red;'>Error with the prepared statement, contact the developer.</p>";
+                    error_log("Error connection failed: " . $conn->connect_error);
+                    echo "<p style='color:red;'>An error occurred. Please try again later.</p>";
                 } else {
-                    // Values entered by the users
                     $username = $_POST["username"];
                     $password = $_POST["password"];
 
-                    $stmt->execute();
-                    $stmt->store_result();
+                    $stmt = $conn->prepare("SELECT id, username, pwd, attempts, last_attempt, status_lock FROM users WHERE username = ?");
+                    $stmt->bind_param("s", $username);
 
-                    // Check if the user exists in the db
-                    if ($stmt->num_rows > 0) {
-                        $stmt->bind_result($id, $db_username, $db_hashpwd);
-                        $stmt->fetch();
-
-                        if (password_verify($password, $db_hashpwd)) {
-                            echo "<p style='color:green;'>You are successfully logged in $db_username.</p>";
-                        } else {
-                            echo "<p style='color:red;'>Username or password is incorrect</p>"; // password incorrect
-                        }
+                    if (!$stmt) {
+                        error_log("Error with the prepared statement: " . $conn->error);
+                        echo "<p style='color:red;'>An error occurred. Please try again later.</p>";
                     } else {
-                        echo "<p style='color:red;'>Username or password is incorrect</p>"; // username inexistant
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        if ($result->num_rows > 0) {
+                            $user = $result->fetch_assoc();
+                            if ($user['status_lock'] == 1) {
+                                // Calculate the time difference
+                                $current_time = time();
+                                $last_attempt_time = strtotime($user['last_attempt']);
+                                $time_difference = $current_time - $last_attempt_time;
+                                
+                                if ($time_difference < LOCK_DURATION) {
+                                    echo "<p style='color:red;'>Your account is temporarily locked. Please try again later.</p>";
+                                    exit; 
+                                } else {
+                                    // Free the account if time passed
+                                    $stmt = $conn->prepare("UPDATE users SET attempts = 0, last_attempt = NULL, status_lock = 0 WHERE id = ?");
+                                    $stmt->bind_param("i", $user['id']);
+                                    $stmt->execute();
+                                }
+                            }
+                            // Check password
+                            if (password_verify($password, $user['pwd'])) {
+                                echo "<p style='color:green;'>You are successfully logged in " . htmlspecialchars($user['username']) . ".</p>";
+                                // Reset the number of failed login attempts
+                                $stmt = $conn->prepare("UPDATE users SET attempts = 0 WHERE id = ?");
+                                $stmt->bind_param("i", $user['id']);
+                                $stmt->execute();
+                            } else {
+                                // Increment failed attempts
+                                $attempts = $user['attempts'] + 1;
+                                if ($attempts >= MAX_ATTEMPTS) {
+                                    // Lock the account
+                                    $stmt = $conn->prepare("UPDATE users SET attempts = ?, last_attempt = CURRENT_TIMESTAMP, status_lock = 1 WHERE id = ?");
+                                    $stmt->bind_param("ii", $attempts, $user['id']);
+                                    $stmt->execute();
+                                    echo "<p style='color:red;'>Your account is temporarily locked. Please try again later.</p>";
+                                } else {
+                                    // Update attempts count and last_attempt time
+                                    $stmt = $conn->prepare("UPDATE users SET attempts = ?, last_attempt = CURRENT_TIMESTAMP WHERE id = ?");
+                                    $stmt->bind_param("ii", $attempts, $user['id']);
+                                    $stmt->execute();
+                                    echo "<p style='color:red;'>Username or password is incorrect. You have " . (MAX_ATTEMPTS - $attempts) . " attempt(s) left.</p>";
+                                }
+                            }
+                        } else {
+                            echo "<p style='color:red;'>Username or password is incorrect</p>";
+                        }
                     }
                     $stmt->close();
                     $conn->close();
                 }
             }
-            ?>
+        ?>
+
         <button type="reset" class="btn">Reset</button>
         <button type="submit" class="btn">Login</button>
     </form>
