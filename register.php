@@ -31,32 +31,32 @@
 
                     // Check connection with the db
                     if ($conn->connect_error) {
-                        echo "<p style='color:red;'>Error connection failed, contact the developer.</p>";
+                        error_log("Error connection failed: " . $conn->connect_error);
+                        echo "<p style='color:red;'>An error occurred. Please try again later.</p>";
                     } else {
                         // Check if the passwords are matching
                         if ($_POST["password"] !== $_POST["confirm-password"]) {
                             echo "<p style='color:red;'>Please make sure your passwords match.</p>";
                         } else {
                             // Preparing the SQL request
-                            $stmt = $conn->prepare("INSERT INTO users (username, pwd, perm, creation) VALUES (?, ?, ?, ?)");
+                            $stmt = $conn->prepare("INSERT INTO users (username, pwd) VALUES (?, ?)");
 
                             if (!$stmt) {
-                                echo "<p style='color:red;'>Error with the prepared statement, contact the developer.</p>";
+                                error_log("Error with the prepared statement: " . $conn->error);
+                                echo "<p style='color:red;'>An error occurred. Please try again later.</p>";
                             } else {
                                 // hash password
                                 $hashed_password = password_hash($_POST["password"], PASSWORD_DEFAULT);
 
                                 $username = $_POST["username"];
-                                $perm = 0; // Client(0) Admin(1)
-                                $creation = date('Y-m-d H:i:s'); // Current datetime
 
                                 // Matching and execution
-                                $stmt->bind_param("ssis", $username, $hashed_password, $perm, $creation);
+                                $stmt->bind_param("ssis", $username, $hashed_password);
                                 $result = $stmt->execute();
-
+                                
                                 // Check the result
                                 if ($result) {
-                                    echo "<p style='color:green;'>Congratulations, your account $username has been successfully created</p>";
+                                    echo "<p style='color:green;'>Congratulations, your account ". htmlspecialchars($username) ." has been successfully created</p>";
                                 } else {
                                     echo "<p style='color:red;'>This username is already taken.</p>";
                                 }
