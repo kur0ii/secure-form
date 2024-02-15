@@ -6,7 +6,7 @@ This project aims to create a secure login form with robust protection against a
 
 - `PHP`
 - `database server` personally, I've chosen to use phpAdmins to create my database.
-- `database structure` users(id,username,pwd,perm,creation)
+- `database structure` users(id,username,pwd,attempts,last_attempt,status_lock)
 
 ## Project Structure
 
@@ -15,6 +15,7 @@ The project is organized into several files, each with a specific role:
 - **/img :** directory for images
 - **config.php :** database configuration file
 - **login.php :** file for the login form
+- **index.html :** main file
 - **register.php :** file for the registration form
 - **styles.css :** style file for layout
 - **database.sql :** file describing the database structuration
