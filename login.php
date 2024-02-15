@@ -50,7 +50,7 @@
                                 // Calculate the time difference
                                 $current_time = time();
                                 $last_attempt_time = strtotime($user['last_attempt']);
-                                $time_difference = $current_time - $last_attempt_time;
+                                $time_difference = abs($current_time - $last_attempt_time);
                                 
                                 if ($time_difference < LOCK_DURATION) {
                                     echo "<p style='color:red;'>Your account is temporarily locked. Please try again later.</p>";
